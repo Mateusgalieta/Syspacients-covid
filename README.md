@@ -1,1 +1,3 @@
-Syspacients-covid
+SISTEMA DE CONTROLE DE PACIENTES COM SINTOMAS DE COVID-19
+
+Nova edicao
