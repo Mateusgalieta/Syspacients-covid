@@ -6,7 +6,8 @@
    $idUsuario = $_GET['idUsuario'];
 
    //recuperando dados da sessao
-   $id_usuario   = $_SESSION["id_usuario"];   
+   $id_usuario   = $_SESSION["id_usuario"];
+   $tipoAcesso   = $_SESSION["tipo_acesso"];    
    $nome_usuario = "";
    
    $sql = "SELECT nome FROM usuarios WHERE id = ".$id_usuario;
@@ -22,17 +23,24 @@
    $nomeUsuario  = "";
    $emailUsuario = "";
    $senhaUsuario = "";
+   $tipo_acesso  = 0;
+   $descAcesso   = "";
 
    if($idUsuario != 0){
-      $sql = "SELECT nome, email, senha FROM usuarios WHERE id = " . $idUsuario;
+      $sql = "SELECT u.nome, u.email, u.senha, u.tipo_acesso, t.descricao 
+              FROM usuarios u
+                  INNER JOIN tipo_acesso t ON u.tipo_acesso = t.id
+              WHERE u.id = " . $idUsuario;
       $resp = mysqli_query($conexao_bd, $sql);
       if($rows=mysqli_fetch_row($resp)){
          $nomeUsuario  = $rows[0];      
          $emailUsuario = $rows[1];
          $senhaUsuario = $rows[2];
+         $tipo_acesso  = $rows[3];
+         $descAcesso   = $rows[4];
       }  
    }
-   mysqli_close($conexao_bd);
+   
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -58,14 +66,20 @@
             <li class="nav-item">
               <a class="nav-link" href="admin.php">Home <span class="sr-only">(current)</span></a>
             </li>
-            <li class="nav-item dropdown active">
-              <a class="nav-link dropdown-toggle" href="#" id="dropdown09" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Cadastros</a>
-              <div class="dropdown-menu" aria-labelledby="dropdown09">
-                <a class="dropdown-item" href="#">Cadastro de pessoas</a>
-                <a class="dropdown-item" href="usuario_list2.php">Cadastro de usuários</a>                
-                <a class="dropdown-item" href="#">Cadastro de pacientes</a>
-              </div>
-            </li>
+            <?php 
+            if($tipoAcesso != 3) {
+            ?>
+              <li class="nav-item dropdown active">
+                <a class="nav-link dropdown-toggle" href="#" id="dropdown09" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Cadastros</a>
+                <div class="dropdown-menu" aria-labelledby="dropdown09">
+                  <a class="dropdown-item" href="#">Cadastro de pessoas</a>
+                  <a class="dropdown-item" href="usuario_list2.php">Cadastro de usuários</a>                
+                  <a class="dropdown-item" href="#">Cadastro de pacientes</a>
+                </div>
+              </li>
+            <?php
+            }
+            ?>
           </ul>  
           <ul class="navbar-nav navbar-right">
             <li class="nav-item dropdown">
@@ -111,6 +125,37 @@
                <label for="inputPassword">Senha</label>
                <input type="text" class="form-control" id="inputPassword" name="inputPassword" value="<?php echo($senhaUsuario);?>">
             </div>
+            <div class="form-group">
+               <label for="lstTipoAcesso">Tipo de acesso</label>
+               <select class="form-control" id="lstTipoAcesso" name="lstTipoAcesso">
+                  <?php
+                  //verificar se novo usuário ou atualizar usuário:
+                  $opcoes = "";
+                  if($idUsuario == 0){
+                     //novo
+                     $sql    = "SELECT id, descricao FROM tipo_acesso";
+                     $resp   = mysqli_query($conexao_bd, $sql);
+                     $opcoes = "<option value='0'>Selecione uma opção</option>";
+                     while($rows=mysqli_fetch_row($resp)){
+                        $idOpcao  = $rows[0];
+                        $desOpcao = $rows[1];
+                        $opcoes  .= "<option value='$idOpcao'>$desOpcao</option>"; 
+                     }
+                  }else{
+                     //atualizar
+                     $opcoes = "<option value='$tipo_acesso'>$descAcesso</option>";
+                     $sql    = "SELECT id, descricao FROM tipo_acesso WHERE id <> $tipo_acesso";
+                     $resp   = mysqli_query($conexao_bd, $sql);
+                     while($rows=mysqli_fetch_row($resp)){
+                        $idOpcao  = $rows[0];
+                        $desOpcao = $rows[1];
+                        $opcoes  .= "<option value='$idOpcao'>$desOpcao</option>"; 
+                     }
+                  }
+                  echo($opcoes);
+                  ?>
+               </select>
+            </div>            
             <input type="hidden" id="inputIdUsuario" name="inputIdUsuario" value="<?php echo($idUsuario) ?>">
             <button type="submit" class="btn btn-success">Gravar</button>&nbsp;
             <a href="usuario_list2.php" class="btn btn-warning" role="button">Retornar</a>
@@ -121,4 +166,8 @@
 
 
 </body>
+<?php
+//encerrando a conexao com mysql
+mysqli_close($conexao_bd);
+?>
 </html>
